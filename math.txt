@@ -1,0 +1,5 @@
+scaler, vector, matrix, tensor
+vector dot product
+linerar operator (Expectation, Back, Lag)
+variance and covariance
+correlation
