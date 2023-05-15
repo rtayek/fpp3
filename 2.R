@@ -141,6 +141,7 @@ vic_elec |> # fails with: object 'Day_Type' not found
     labs(x = "Temperature (degrees Celsius)",
          y = "Electricity demand (GW)")
 
+us_change |> GGally::ggpairs(columns = 2:6)
 
 a10 |>
     gg_subseries(Cost) +
@@ -148,3 +149,58 @@ a10 |>
         y = "$ (millions)",
         title = "Australian antidiabetic drug sales"
     )
+ 
+# 2.7 lag plots
+
+recent_production <- aus_production |>
+    filter(year(Quarter) >= 2000)
+recent_production |>
+    gg_lag(Beer, geom = "point") +
+    labs(x = "lag(Beer, k)")
+
+# try the above with some stocks
+
+# 2.8 auto correlation
+
+recent_production |> ACF(Beer, lag_max = 9)
+
+# formula for correlation is different from the usual formula!
+
+recent_production |>
+    ACF(Beer) |>
+    autoplot() + labs(title="Australian beer production")
+
+a10 |>
+    ACF(Cost, lag_max = 48) |>
+    autoplot() +
+    labs(title="Australian antidiabetic drug sales")
+
+retail <- us_employment |> filter(Title=="Retail Trade",year(Month) >= 1980)
+retail |> autoplot(Employed)
+
+google_2015 <- gafa_stock |> filter(Symbol=="GOOG",year(Date)>=2015) |> select(Date,Close)
+
+# [!] - means irregular time spacing
+
+google_2015 |> autoplot(Close)
+
+google_2015 |> ACF(Close,lag_max=100) |> autoplot()
+
+# doing this with residuals is more common!
+
+a10 |>
+    ACF(Cost, lag_max = 48) |>
+    autoplot() +
+    labs(title="Australian antidiabetic drug sales")
+
+# 2.9 white noise
+
+set.seed(30)
+y <- tsibble(sample = 1:50, wn = rnorm(50), index = sample)
+y |> autoplot(wn) + labs(title = "White noise", y = "")
+
+y |> ACF(wn) |>  autoplot() + labs(title = "White noise")
+
+pigs <- aus_livestock |> filter(State=="Victoria",Animal=="Pigs",year(Month)>=2014)
+pigs |> autoplot(Count/1e3)+labs(y="y")
+pigs |> ACF() |> autoplot()
