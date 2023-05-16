@@ -204,3 +204,5 @@ y |> ACF(wn) |>  autoplot() + labs(title = "White noise")
 pigs <- aus_livestock |> filter(State=="Victoria",Animal=="Pigs",year(Month)>=2014)
 pigs |> autoplot(Count/1e3)+labs(y="y")
 pigs |> ACF() |> autoplot()
+
+# 2.10 Exercises
