@@ -229,3 +229,99 @@ fit_dcmp |> gg_tsresiduals()
 
 # 5.8 Evaluating point forecast accuracy
 
+aus_production |> filter(year(Quarter) >= 1995)
+
+aus_production |> filter_index("1995 Q1" ~ .)
+
+aus_production |>  slice(n()-19:0) # last 20 observations
+
+aus_retail |>  group_by(State, Industry) |>  slice(1:12)
+
+# books says mae and mse are scale independent.
+# and that mape is not.
+# what if we standardized so starting stokc price is 1?
+# or if diff lag?
+
+# scaled erroe: mase
+
+beer_production <- aus_production |>
+    filter(year(Quarter)>=1992)
+train <- beer_production |>
+    filter(year(Quarter)>=2007)
+beer_fit<- train |>  model(
+        Mean = MEAN(Beer),
+        `Naïve` = NAIVE(Beer),
+        Seasonal_naive=SNAIVE(Beer),
+        Drift = NAIVE(Beer ~ drift())
+    )
+beer_fc<-beer_fit |> forecast(h=10)
+beer_fc |> autoplot()
+names(beer_fc)
+# how to plot this?
+
+# Evaluating distributional forecast accuracy (as opposed to just a point)
+
+# guy says stock prices are not seasonal!
+
+google_fc |>
+    filter(.model == "Naïve") |>
+    autoplot(bind_rows(google_2015, google_jan_2016), level=80)+
+    labs(y = "$US",
+         title = "Google closing stock prices")
+
+google_fc |>
+    filter(.model == "Naïve", Date == "2016-01-04") |>
+    accuracy(google_stock, list(qs=quantile_score), probs=0.10)
+#> # A tibble: 1 × 4
+#>   .model Symbol .type    qs
+#>   <chr>  <chr>  <chr> <dbl>
+#> 1 Naïve  GOOG   Test   4.86
+#> 
+
+google_fc |>
+filter(.model == "Naïve", Date == "2016-01-04") |>
+    accuracy(google_stock,
+             list(winkler = winkler_score), level = 80)
+#> # A tibble: 1 × 4
+#>   .model Symbol .type winkler
+#>   <chr>  <chr>  <chr>   <dbl>
+#> 1 Naïve  GOOG   Test     55.7
+#> 
+
+google_fc |>
+    accuracy(google_stock, list(crps = CRPS))
+#> # A tibble: 3 × 4
+#>   .model Symbol .type  crps
+#>   <chr>  <chr>  <chr> <dbl>
+#> 1 Drift  GOOG   Test   33.5
+#> 2 Mean   GOOG   Test   76.7
+#> 3 Naïve  GOOG   Test   26.5
+#> 
+
+google_fc |>
+    accuracy(google_stock, list(skill = skill_score(CRPS)))
+# any function can be inside the skill sore
+#> # A tibble: 3 × 4
+#>   .model Symbol .type  skill
+#>   <chr>  <chr>  <chr>  <dbl>
+#> 1 Drift  GOOG   Test  -0.266
+#> 2 Mean   GOOG   Test  -1.90 
+#> 3 Naïve  GOOG   Test   0
+
+#  Time series cross-validation
+
+# Time series cross-validation accuracy
+google_2015_tr <- google_2015 |>
+    stretch_tsibble(.init = 3, .step = 1) |>
+    relocate(Date, Symbol, .id)
+google_2015_tr
+
+# TSCV accuracy
+google_2015_tr |>
+    model(RW(Close ~ drift())) |>
+    forecast(h = 1) |>
+    accuracy(google_2015)
+# Training set accuracy
+google_2015 |>
+    model(RW(Close ~ drift())) |>
+    accuracy()
