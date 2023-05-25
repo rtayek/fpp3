@@ -1,6 +1,6 @@
 # Chapter 8 Exponential smoothing
 # 8.1 Simple exponential smoothing
-
+library(fpp3)
 algeria_economy <- global_economy |>
     filter(Country == "Algeria")
 algeria_economy |>
@@ -119,3 +119,46 @@ sth_cross_ped |>
 # 8.4 A taxonomy of exponential smoothing methods
 # ETS error trend season
 # 8.5 Innovations state space models for exponential smoothing
+# 8.6 Estimation and model selection
+
+aus_holidays <- tourism |>
+    filter(Purpose == "Holiday") |>
+    summarise(Trips = sum(Trips)/1e3)
+fit <- aus_holidays |>
+    model(ETS(Trips))
+report(fit)
+
+components(fit) |>
+    autoplot() +
+    labs(title = "ETS(M,N,A) components")
+# errir here us rekative error
+fit<-global_economy|>mutate(Pop=Population/1e6)|>model(ets=ETS(Pop))
+fit|>forecast(h=5)
+residuals(fit)
+residuals(fit,type="response")
+
+# response residuals 
+# innovation residuals (differ between additive and multiplicative)
+
+# 8.7 Forecasting with ETS models
+
+fit |>
+    forecast(h = 8) |>
+    autoplot(aus_holidays)+
+    labs(title="Australian domestic tourism",
+         y="Overnight trips (millions)")
+
+h02<-PBS|>filter(ATC2=="H02")|>
+    summarize(Cost=sum(Cost))
+h02|>autoplot(Cost)
+h02|>model(ETS(Cost))|>report()
+# fable chooses the better using smallest AICc
+h02|>model(ETS(Cost~error("A")+trend("A")+season("A")))|>report()
+# the above model is not as good.
+h02|>model(ETS(Cost))|>forecast()|>autoplot(h02)
+#combine both
+require(forecast)
+cc<-h02|>model(
+    ETS(Cost),
+    ETS(Cost~error("A")+trend("A")+season("A"))
+    ) |> accuracy() # fails!
