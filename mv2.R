@@ -12,4 +12,7 @@ v=rollapplyr(y, 100, by=100,var, partial = TRUE)
 str(v)
 sqrt(v)
 mean(ts)
+var(ts)
+# do a log transform and see it it reduces the variance?
+
 

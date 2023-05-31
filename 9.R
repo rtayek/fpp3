@@ -241,3 +241,99 @@ glance(fit2) |> arrange(AICc) |> select(.model:BIC)
 
 # 9.10 ARIMA vs ETS
 
+library(tsibble)
+
+aus_economy <- global_economy |>
+    filter(Code == "AUS") |>
+    mutate(Population = Population/1e6)
+
+# can't find accuracy()
+# restart r (sessio menu) when this occurs.
+aus_economy |>
+    slice(-n()) |>
+    stretch_tsibble(.init = 10) |>
+    model(
+        ETS(Population),
+        ARIMA(Population)
+    ) |>
+    forecast(h = 1) |> # only was to compare
+    accuracy(aus_economy) |>
+    select(.model, RMSE:MAPE)
+#> # A tibble: 2 × 5
+#>   .model              RMSE    MAE   MPE  MAPE
+#>   <chr>              <dbl>  <dbl> <dbl> <dbl>
+#> 1 ARIMA(Population) 0.194  0.0789 0.277 0.509
+#> 2 ETS(Population)   0.0774 0.0543 0.112 0.327
+
+cement <- aus_production |>
+    select(Cement) |>
+    filter_index("1988 Q1" ~ .)
+train <- cement |> filter_index(. ~ "2007 Q4")
+
+fit_arima <- train |> model(ARIMA(Cement))
+report(fit_arima)
+#> Series: Cement 
+#> Model: ARIMA(1,0,1)(2,1,1)[4] w/ drift 
+#> 
+#> Coefficients:
+#>          ar1      ma1   sar1     sar2     sma1  constant
+#>       0.8886  -0.2366  0.081  -0.2345  -0.8979     5.388
+#> s.e.  0.0842   0.1334  0.157   0.1392   0.1780     1.484
+#> 
+#> sigma^2 estimated as 11456:  log likelihood=-463.5
+#> AIC=941   AICc=942.7   BIC=957.4
+fit_arima |> gg_tsresiduals(lag_max = 16)
+augment(fit_arima) |>
+    features(.innov, ljung_box, lag = 16, dof = 5)
+#> # A tibble: 1 × 3
+#>   .model        lb_stat lb_pvalue
+#>   <chr>           <dbl>     <dbl>
+#> 1 ARIMA(Cement)    6.37     0.847
+
+fit_ets <- train |> model(ETS(Cement))
+report(fit_ets)
+#> Series: Cement 
+#> Model: ETS(M,N,M) 
+#>   Smoothing parameters:
+#>     alpha = 0.7534 
+#>     gamma = 1e-04 
+#> 
+#>   Initial states:
+#>  l[0]  s[0] s[-1] s[-2]  s[-3]
+#>  1695 1.031 1.045 1.011 0.9122
+#> 
+#>   sigma^2:  0.0034
+#> 
+#>  AIC AICc  BIC 
+#> 1104 1106 1121
+fit_ets |>
+    gg_tsresiduals(lag_max = 16)
+augment(fit_ets) |>
+    features(.innov, ljung_box, lag = 16)
+#> # A tibble: 1 × 3
+#>   .model      lb_stat lb_pvalue
+#>   <chr>         <dbl>     <dbl>
+#> 1 ETS(Cement)    10.0     0.865
+
+# Generate forecasts and compare accuracy over the test set
+bind_rows(
+    fit_arima |> accuracy(),
+    fit_ets |> accuracy(),
+    fit_arima |> forecast(h = 10) |> accuracy(cement),
+    fit_ets |> forecast(h = 10) |> accuracy(cement)
+) |>
+    select(-ME, -MPE, -ACF1)
+#> # A tibble: 4 × 7
+#>   .model        .type     RMSE   MAE  MAPE  MASE RMSSE
+#>   <chr>         <chr>    <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 ARIMA(Cement) Training  100.  79.9  4.37 0.546 0.582
+#> 2 ETS(Cement)   Training  103.  80.0  4.41 0.547 0.596
+#> 3 ARIMA(Cement) Test      216. 186.   8.68 1.27  1.26 
+#> 4 ETS(Cement)   Test      222. 191.   8.85 1.30  1.29
+
+cement |>
+    model(ARIMA(Cement)) |>
+    forecast(h="3 years") |>
+    autoplot(cement) +
+    labs(title = "Cement production in Australia",
+         y = "Tonnes ('000)")

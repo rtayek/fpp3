@@ -1,7 +1,7 @@
 # https://palomar.home.ece.ust.hk/MAFS6010R_lectures/Rsession_time_series_modeling.html#multivariate_garch_models
 # https://itadviser.dev/stock-market-data-normalization-for-time-series/#:~:text=Z%2Dscore%20normalization%2C%20also%20known,a%20standard%20deviation%20of%201.&text=Where%3A,Z%2Dscore%20(normalized%20value)
 rm(list = ls())
-library(quantmod)
+#library(quantmod)
 get<-function(symbols) {
     print(symbols)
     prices <- xts()
