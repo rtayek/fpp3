@@ -1,3 +1,4 @@
+rm(list = ls())
 # Chapter 8 Exponential smoothing
 # 8.1 Simple exponential smoothing
 library(fpp3)
@@ -13,6 +14,7 @@ algeria_economy |>
 fit <- algeria_economy |>
     model(ETS(Exports ~ error("A") + trend("N") + season("N")))
 report(fit)
+
 fc <- fit |>
     forecast(h = 5)
 
@@ -24,6 +26,11 @@ fc |>
     guides(colour = "none")
 
 components(fit) |> autoplot()
+
+components(fit) |> left_join(fitted(fit),by=c("Country",".model","Year"))
+
+fit|>forecast(h=5)|>autoplot(algeria_economy)+
+    labs(y="% of GDP",y="Exports: Algeria")
 
 # 8.2 Methods with trend
 # holts linear trend
@@ -38,7 +45,18 @@ fit <- aus_economy |>
     model(
         AAN = ETS(Pop ~ error("A") + trend("A") + season("N"))
     )
+report(fit)
+
+components(fit)|>autoplot()
+
+components(fit) |> left_join(fitted(fit),by=c("Country",".model","Year"))
+
+fit |> forecast(h = 10) |> autoplot(aus_economy)+
+    labs(y = "Millions", title = "Australian population")
+
 fc <- fit |> forecast(h = 10)
+
+# damped trend method
 
 aus_economy |>
     model(
@@ -83,6 +101,8 @@ fit |>
          title = "Internet usage per minute")
 
 # 8.3 Methods with seasonality
+
+# holt-winters
 
 aus_holidays <- tourism |>
     filter(Purpose == "Holiday") |>
@@ -162,3 +182,4 @@ cc<-h02|>model(
     ETS(Cost),
     ETS(Cost~error("A")+trend("A")+season("A"))
     ) |> accuracy() # fails!
+

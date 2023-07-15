@@ -1,0 +1,63 @@
+Welcome Back. In task three,
+we have learned about the assumptions for ARIMA and have seen
+how to remove non-stationarity from our data.
+Our next step is to determine what type of model is suitable
+for the given time series data. In general we utilize the ACF
+and PACF plots to determine the suitability of the type
+of ARIMA model.
+ACF plots the auto correlation of the given series
+with its lag values.
+In simpler terms, it helps to understand how present value
+of the time series is linked with its past values.
+ACF
+considers all the possibilities like trend, seasonality,
+cyclicity while evaluating the auto correlation function.
+PACF is slightly different.
+It deals with the partial auto correlation
+unlike complete correlation
+as in the previous case. It evaluates the correlation
+in the residuals after removal of the non-stationarities
+as we have done in the previous step. Based on the functional
+plots, we can determine the series in one of the following
+categories.
+An auto regressive process is basically where the present
+value can be represented as the weighted average of its
+historical values.
+The mathematical representation of an AR process of order p
+is given here. A moving average process on the other hand,
+represents its present value as a linear combination of past
+errors.
+It assumes that the errors are independently distributed
+under normal distribution. An MA process of order q
+can be written in this way. A combination of AR
+and MA process derives ARMA models.
+A slight modification of ARMA is auto regressive integrated
+moving average process where we need the extra step
+for differencing.
+Now we conduct the ACF and PACF tests to determine
+the suitable model.
+You can see the correlation plots prepared on the stationary
+data. We can determine the type of time series processes
+and p and q
+value from these two graphs.
+You can use this table for your reference.
+Let us check if our graphical description matches with the AR
+process. If our ACF plot looks like this and the PACF
+has significant spikes in its first lags,
+then it is an AR
+process. For MA process,
+we start with the PACF to look for the sinusoidal pattern
+and then identify the spikes in ACF. For ARMA,
+both plots will display an exponential decay and ARIMA
+will add on to the differencin g parameter to it.
+In our case we see a dampened sinusoidal waveform in ACF and
+PACF has some bold and distinct spikes.
+Therefore it is clearly an AR process and we determined
+the p value by counting the prominent spikes in early lags
+from the PACF plot. Here the value is five. One, two, three,
+four and five.
+You can take this as a practice exercise to read different
+types of ACF
+and PACF plots to determine the model and their order.
+In the next task we will continue with finding the best model.
+See you there.

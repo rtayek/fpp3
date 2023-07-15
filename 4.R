@@ -1,5 +1,9 @@
+require(fpp3)
 # 4 features
 # 4.1 Some simple statistics
+
+tourism |>
+    features(Trips, list(mean = mean))
 
 tourism |>
     features(Trips, list(mean = mean)) |>
@@ -16,7 +20,8 @@ x<-tourism |> features(Trips, feat_acf)
 
 tourism |>
     features(Trips, feat_stl)
-
+tf<-tourism |>
+    features(Trips, feat_stl)
 tourism |>
     features(Trips, feat_stl) |>
     ggplot(aes(x = trend_strength, y = seasonal_strength_year,
@@ -40,7 +45,7 @@ tourism |>
 
 tourism_features <- tourism |>
     features(Trips, feature_set(pkgs = "feasts"))
-tourism_features
+tourism_features$coef_hurst
 
 library(glue)
 tourism_features |>

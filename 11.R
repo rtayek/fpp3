@@ -98,3 +98,23 @@ fc |>
 
 # 11.5 Reconciled distributional forecasts
 
+# 11.6 Forecasting Australian prison population
+
+prison <- readr::read_csv("https://OTexts.com/fpp3/extrafiles/prison_population.csv") # from chapter 2
+# fails
+#fit <- prison_gts |>
+fit <- prison |>
+    filter(year(Quarter) <= 2014) |>
+    model(base = ETS(Count)) |>
+    reconcile(
+        bottom_up = bottom_up(base),
+        MinT = min_trace(base, method = "mint_shrink")
+    )
+fc <- fit |> forecast(h = 8)
+
+fc |>
+    filter(is_aggregated(State), is_aggregated(Gender),
+           is_aggregated(Legal)) |>
+    autoplot(prison_gts, alpha = 0.7, level = 90) +
+    labs(y = "Number of prisoners ('000)",
+         title = "Australian prison population (total)")

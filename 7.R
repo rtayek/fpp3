@@ -1,6 +1,10 @@
+rm(list = ls())
 # Chapter 7 Time series regression models
 # 7.1 the linear model
-require(fpp3_)
+require(fpp3)
+
+# text
+
 us_change |>
     pivot_longer(c(Consumption, Income), names_to="Series") |>
     autoplot(value) +
@@ -12,7 +16,7 @@ us_change |>
          x = "Income (quarterly % change)") +
     geom_point() +
     geom_smooth(method = "lm", se = FALSE)
-us_change |>
+us_change |> # time series linear model
     model(TSLM(Consumption ~ Income)) |>
     report()
 
@@ -35,7 +39,7 @@ fit_consMR <- us_change |>
     model(tslm = TSLM(Consumption ~ Income + Production +
                           Unemployment + Savings))
 report(fit_consMR)
-
+a<-augment(fit_consMR)
 augment(fit_consMR) |>
     ggplot(aes(x = Quarter)) +
     geom_line(aes(y = Consumption, colour = "Data")) +
@@ -145,13 +149,18 @@ fit<-aus_cafe |>
     )
 
 fit |> select(K1) |> gg_tsresiduals()
+aMable<-fit |> select(K1) # let's see what this is?
+fit |> select(K6) |> gg_tsresiduals()
 
 # how to plot the harmonic regression?
 # the stuff below does not work.
 
+library(pryr )
+otype(fit) # just says: "S3".
+# ftype(fit) # function not defined as one would expect
+
 glance(fit) |>
     select(.model,r_squared,adj_r_squared, CV, AICc, BIC)
-
 
 #k1<-fit |> select(K1)
 #k1 |> forecast() |> autoplot(Turnover)
@@ -169,7 +178,6 @@ glance(fit) |>
 # AIC, BI (SBIC) 
 # minimuing BIC is assymototically asymtequivalent to  leave some out out  cross validation.
 
-
 glance(fit_consMR) |> # different from video
     select(adj_r_squared, CV, AIC, AICc, BIC)
 
@@ -179,6 +187,9 @@ glance(fit_consMR) |> # different from video
 
 
 # 7.6 Forecasting with regression
+
+# ex ante (only use knon info known in davance)
+# ex post (use existing from future)
 
 recent_production <- aus_production |>
     filter(year(Quarter) >= 1992)
@@ -197,6 +208,7 @@ fit_consBest <- us_change |>
     model(
         lm = TSLM(Consumption ~ Income + Savings + Unemployment)
     )
+
 future_scenarios <- scenarios(
     Increase = new_data(us_change, 4) |>
         mutate(Income=1, Savings=0.5, Unemployment=0),
@@ -235,6 +247,9 @@ boston_men |>
          title = "Boston marathon winning times")
 
 fit_trends |> select(piecewise) |> gg_tsresiduals()
+
+# correlations that are not causal can be useful
+# better to find causal relationships
 
 # 7.8 Correlation, causation and forecasting
 

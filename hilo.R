@@ -1,8 +1,15 @@
 require(fpp3)
-google_2018<-gafa_stock|>filter(Symbol=="GOOG",year(Date)==2018)
-hilo<-google_2018|>mutate(hilo=High-Low)
-t<-as_tsibble(hilo)
-names(t)
-autoplot(t,.vars=hilo)+labs(y="high-low")
-mean(t$hilo)
+# tsibble
+goog<-gafa_stock|>filter(Symbol=="GOOG",year(Date)==2018)
+close<-goog|>select(Close)
+close|>mutate(Close = Close / first(Close))
+#hilo<-goog|>mutate(hilo=High-Low)
+autoplot(close)
+
+#t<-as_tsibble(goog)
+#t0<-t|>select("hilo")
+#names(t)
+#autoplot(t,.vars=hilo)+labs(y="high-low")
+#mean(t$hilo)
 var(t$hilo)
+

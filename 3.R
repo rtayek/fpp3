@@ -1,8 +1,20 @@
+require(fpp3)
+
 # 3 decomposition
 
 # trend/cycle components
 
 # 3.1 transforms and adjustments
+
+# trend and cycles usually get combined into a trend-cycle comnponent
+
+# box-cox log lambda (bickel digstroum)
+
+# features guerrro
+
+# video
+
+# text?
 
 global_economy |>
     filter(Country == "Australia") |>
@@ -58,6 +70,8 @@ autoplot(us_retail_employment, Employed) +
 
 dcmp <- us_retail_employment |>  model(stl = STL(Employed))
 components(dcmp)
+
+# a dable is a decompositioned model.
 
 components(dcmp) |>
     as_tsibble() |>
@@ -138,6 +152,9 @@ us_retail_employment |>
 
 # 3.5 Methods used by official statistics agencies
 
+# also stl and TRAMO/SEATS
+# stl is always additive
+
 x11_dcmp <- us_retail_employment |>
     model(x11 = X_13ARIMA_SEATS(Employed ~ x11())) |>
     components()
@@ -161,13 +178,29 @@ x11_dcmp |>
 
 # 3.6 stl decomposition
 
+# seasonal and trend decomposition using loes.
+# additie only
+# no trading day or ckendar adjustments.
+
 us_retail_employment |>
     model(
-        STL(Employed ~ trend(window = 7) +
+        STL(Employed ~ trend(window = 9) +
                 season(window = "periodic"),
             robust = TRUE)) |>
     components() |>
     autoplot()
+
+us_retail_employment |>
+    model(
+        STL(Employed ~ trend(window = 15) +
+                # periodic is infinite window
+                # season(window = "periodic"), # best?
+                season(window = 15), # different from periodic
+            robust = TRUE)) |>
+    components() |>
+    autoplot()
+
+
 
 # 3.7 exercises
 

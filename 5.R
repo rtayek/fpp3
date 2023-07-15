@@ -1,15 +1,22 @@
+rm(list = ls())
 # 5 The forecaster’s toolbox
 # 5.1 A tidy forecasting workflow
 require(fpp3)
+#text
 gdppc <- global_economy |>
     mutate(GDP_per_capita = GDP / Population)
+
+gdppc <- global_economy |>
+    mutate(GDP_per_capita = GDP / Population) |>
+    select(Year,Country,GDP,Population,GDP_per_capita)
 
 gdppc |>
     filter(Country == "Sweden") |>
     autoplot(GDP_per_capita) +
     labs(y = "$US", title = "GDP per capita for Sweden")
 
-TSLM(GDP_per_capita ~ trend())
+m1<-TSLM(GDP_per_capita ~ trend())
+m1
 
 fit <- gdppc |>
     model(trend_model = TSLM(GDP_per_capita ~ trend()))
@@ -25,6 +32,39 @@ fit |>
     labs(y = "$US", title = "GDP per capita for Sweden")
 
 # 5.2 Some simple forecasting methods
+# video
+
+brick_fit<-aus_production |>
+    filter(!is.na(Bricks)) |>
+    model(
+        snaive=SNAIVE(Bricks),
+          naive=NAIVE(Bricks), # could be just RW()
+          drift=RW(Bricks~drift()),
+          mean=MEAN(Bricks)
+    )
+
+brick_fc<-brick_fit |> forecast(h="5 years")
+
+brick_fc |>
+    autoplot(aus_production, level = NULL) +
+    labs(title="bricks",y="millions of bricks")+
+    guides(colour = guide_legend(title = "Forecast"))
+
+fb_stock<-gafa_stock|>filter(Symbol=="FB") |>
+    mutate(trading_day=row_number()) |> # missing days
+    update_tsibble(index=trading_day,regular=TRUE)
+fb_stock|>model(
+    #snaive=SNAIVE(Close),
+    naive=NAIVE(Close), # could be just RW()
+    drift=RW(Close~drift()),
+    mean=MEAN(Close)
+    ) |>
+    forecast(h=42)|>
+    autoplot(fb_stock,level=NULL)+
+    labs(title="FB",y="$US")+
+    guides(color=guide_legend(title="forecast"))
+
+# back to text
 
 bricks <- aus_production |>
     filter_index("1970 Q1" ~ "2004 Q4") |>
@@ -93,6 +133,51 @@ augment(beer_fit)
 
 # 5.4 Residual diagnostics
 
+#video
+
+fb_stock|>autoplot(Close)
+
+fit<-fb_stock|>model(NAIVE(Close))
+augment(fit) # get fitted values and residuals
+
+augment(fit)|>
+    ggplot(aes(x=trading_day))+
+    geom_line(aes(y=Close,color="Data"))+
+    geom_line(aes(y=.fitted,color="Fitted"))
+
+augment(fit)|>
+    filter(trading_day>1100) |> # just show the end
+    ggplot(aes(x=trading_day))+
+    geom_line(aes(y=Close,color="Data"))+
+    geom_line(aes(y=.fitted,color="Fitted"))
+
+augment(fit)|>
+    autoplot(.resid)+ # usualy use .innov
+    labs(y="$US",title="Residuals from naive method")
+    
+augment(fit)|>
+    ggplot(aes(x=.resid))+
+    geom_histogram(bins=150)+
+    labs(title="Histogram of residuals")
+
+augment(fit)|>
+    ACF(.resid)|>
+    autoplot()+labs(title="ACF of residuals")
+
+gg_tsresiduals(fit)
+
+# portmanteau test
+# Box-Pierce
+# Ljung-Box test
+
+# l=10 for non-seasonal data. l=2*m for seasola data (m is period)
+
+augment(fit)|>
+    features(.resid,ljung_box,lag=10)
+
+# text
+
+
 autoplot(google_2015, Close) +
     labs(y = "$US",
          title = "Google daily closing stock prices in 2015")
@@ -103,6 +188,7 @@ augment(fit)
 aug <- google_2015 |>
     model(NAIVE(Close)) |>
     augment()
+
 autoplot(aug, .innov) +
     labs(y = "$US",
          title = "Residuals from the naïve method")
@@ -171,7 +257,35 @@ google_2015 |>
     labs(title="Google daily closing stock price", y="$US" ) +
     guides(colour = "none")
 
+fc <- fit |> forecast(h = 30, bootstrap = TRUE)
+fc
+
+autoplot(fc, google_2015) +
+    labs(title="Google daily closing stock price", y="$US" )
+
+google_2015 |>
+    model(NAIVE(Close)) |>
+    forecast(h = 10, bootstrap = TRUE, times = 1000) |>
+    hilo()
+
 # 5.6 Forecasting using transformations
+
+# video
+
+eggs<-prices |>
+    filter(!is.na(eggs)) |>
+    select(eggs)
+eggs|> autoplot()+
+    labs(title = "Annual egg prices",
+         y = "$US (in cents adjusted for inflation) ")
+
+fit<-eggs|>model(RW(log(eggs)~drift()))
+fit
+
+fc<-fit|>forecast(h=50)
+fc
+
+fc|>autoplot(eggs)+labs(title="annual egg prices",y="$US")
 
 prices |>
     filter(!is.na(eggs)) |>
@@ -191,12 +305,39 @@ fc
 fc|>autoplot(eggs)+labs(y="$")
 # back tranfors?
 fc|>autoplot(eggs,
-         level = 80, point_forecast = lst(mean, median)
-) +
+         level = 80, point_forecast = lst(mean, median)) +
     labs(title = "xxxAnnual egg prices",
          y = "xxx$US (in cents adjusted for inflation) ")
 
+# text
+
 # 5.7 Forecasting with decomposition
+
+# video
+us_retail_employment <- us_employment |>
+    filter(year(Month) >= 1990, Title == "Retail Trade") |>
+    select(-Series_ID)
+us_retail_employment
+
+dcmp<-us_retail_employment|>
+    model(STL(Employed))|>
+    components()|>
+    select(-.model)
+dcmp
+
+dcmp|>model(NAIVE(season_adjust))|>
+    forecast()|>
+    autoplot(dcmp)+labs(title="Naive fc of season adj'ed data")
+
+us_retail_employment|>
+    model(stlf=decomposition_model(
+        STL(Employed~trend(window=7),robust=TRUE),
+        NAIVE(season_adjust)
+    ))|>
+        forecast()|>
+        autoplot(us_retail_employment)
+    
+# text
 
 us_retail_employment <- us_employment |>
     filter(year(Month) >= 1990, Title == "Retail Trade")
@@ -229,6 +370,12 @@ fit_dcmp |> gg_tsresiduals()
 
 # 5.8 Evaluating point forecast accuracy
 
+# video
+
+# beer graph with 4 forecastsk
+
+# text
+
 aus_production |> filter(year(Quarter) >= 1995)
 
 aus_production |> filter_index("1995 Q1" ~ .)
@@ -244,17 +391,31 @@ aus_retail |>  group_by(State, Industry) |>  slice(1:12)
 
 # scaled erroe: mase
 
-beer_production <- aus_production |>
+recent_production <- aus_production |>
     filter(year(Quarter)>=1992)
-train <- beer_production |>
+train <- recent_production |>
     filter(year(Quarter)>=2007)
 beer_fit<- train |>  model(
         Mean = MEAN(Beer),
         `Naïve` = NAIVE(Beer),
         Seasonal_naive=SNAIVE(Beer),
-        Drift = NAIVE(Beer ~ drift())
-    )
+        #Drift = NAIVE(Beer ~ drift())
+        Drift = RW(Beer ~ drift())
+)
+
 beer_fc<-beer_fit |> forecast(h=10)
+
+accuracy(beer_fit)|>
+    arrange(.model)|> # using mable
+    select(.model,.type,RMSE,MAE,MAPE,MASE,RMSSE)
+# i get different numbers!
+
+
+accuracy(beer_fc,recent_production)|>
+    arrange(.model)|> # using mable
+    select(.model,.type,RMSE,MAE,MAPE,MASE,RMSSE)
+# i get different numbers!
+
 beer_fc |> autoplot()
 names(beer_fc)
 # how to plot this?
@@ -308,12 +469,39 @@ google_fc |>
 #> 2 Mean   GOOG   Test  -1.90 
 #> 3 Naïve  GOOG   Test   0
 
+# 5.9 Evaluating distributional forecast accuracy
+
+# quantile score
+
+# 5.10 Time series cross-validation
+
 #  Time series cross-validation
 
 # Time series cross-validation accuracy
+
+# video
+
+fb_stretch <- fb_stock |>
+    stretch_tsibble(.init = 3, .step = 1) |>
+    #relocate(Date, Symbol, .id)
+    filter(.id!=max(.id)) # remove the last one
+# my tsibble is 780k x 10!
+
+fit_cv<-fb_stretch|>model(RW(Close~drift()))
+
+fc_cv<-fit_cv|>forecast(h=1)
+
+fc_cv|>accuracy(fb_stock)
+
+fb_stock|>model(RW(Close~drift()))|>accuracy() # not using stretched?
+# in-sample - not fair!
+# he clains this is a good way to test a model?
+
+# text
+
 google_2015_tr <- google_2015 |>
     stretch_tsibble(.init = 3, .step = 1) |>
-    relocate(Date, Symbol, .id)
+    relocate(Date, Symbol, .id) # what does this do?
 google_2015_tr
 
 # TSCV accuracy
@@ -321,7 +509,31 @@ google_2015_tr |>
     model(RW(Close ~ drift())) |>
     forecast(h = 1) |>
     accuracy(google_2015)
+
 # Training set accuracy
 google_2015 |>
     model(RW(Close ~ drift())) |>
     accuracy()
+
+# example fc horizon acc with cv
+
+google_2015_tr <- google_2015 |>
+    stretch_tsibble(.init = 3, .step = 1)
+fc <- google_2015_tr |>
+    model(RW(Close ~ drift())) |>
+    forecast(h = 8) |>
+    group_by(.id) |>
+    mutate(h = row_number()) |>
+    ungroup() |>
+    as_fable(response = "Close", distribution = Close)
+fc |>
+    accuracy(google_2015, by = c("h", ".model")) |>
+    ggplot(aes(x = h, y = RMSE)) +
+    geom_point()
+
+
+
+
+
+
+

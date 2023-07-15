@@ -85,7 +85,7 @@ beer <- aus_production |>
 beer |> autoplot(Beer)
 beer |> gg_subseries(Beer)
 
-# watch the above again
+# watch the above again (done)
 
 holidays <- tourism |>
     filter(Purpose == "Holiday") |>
@@ -106,6 +106,8 @@ holidays |>
     labs(y = "Trips ('000)",
          title = "Australian domestic holiday nights")
 
+holidays|>gg_subseries(Trips)
+    
 # 2.6 scatterplots
 
 vic_elec |>
@@ -143,6 +145,7 @@ vic_elec |> # fails with: object 'Day_Type' not found
 
 us_change |> GGally::ggpairs(columns = 2:6)
 
+a10|>autoplot(Cost)+labs(y="cost")
 a10 |>
     gg_subseries(Cost) +
     labs(
@@ -157,7 +160,9 @@ recent_production <- aus_production |>
 recent_production |>
     gg_lag(Beer, geom = "point") +
     labs(x = "lag(Beer, k)")
-
+recent_production |>
+    gg_lag(Beer) # with lines
+    
 # try the above with some stocks
 
 # 2.8 auto correlation
@@ -177,6 +182,7 @@ a10 |>
 
 retail <- us_employment |> filter(Title=="Retail Trade",year(Month) >= 1980)
 retail |> autoplot(Employed)
+retail |> ACF(Employed) |> autoplot()
 
 google_2015 <- gafa_stock |> filter(Symbol=="GOOG",year(Date)>=2015) |> select(Date,Close)
 
