@@ -19,4 +19,6 @@ https://nickpoison.github.io/
 
 feature: coef_hurst , feat_spectral
 
+future function for forecasting: https://stackoverflow.com/questions/62944962/forecasting-time-series-groups-with-tslm-tidyverse
+
 

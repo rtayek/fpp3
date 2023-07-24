@@ -82,3 +82,4 @@ outliers |>
     geom_line() +
     facet_grid(Series ~ ., scales = "free") +
     labs(title = "Outlying time series in PC space")
+

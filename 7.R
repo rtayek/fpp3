@@ -3,6 +3,10 @@ rm(list = ls())
 # 7.1 the linear model
 require(fpp3)
 
+# video
+
+
+
 # text
 
 us_change |>

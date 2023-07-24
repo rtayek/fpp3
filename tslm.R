@@ -1,23 +1,20 @@
 rm(list = ls())
 require(fpp3)
-goog<-gafa_stock|>filter(Symbol=="GOOG",year(Date)==2018)
+goog<-gafa_stock|>filter(Symbol=="GOOG",year(Date)==2018) |>
+    #mutate(trading_day=row_number()) |> # missing days
+    #update_tsibble(index=trading_day,regular=TRUE)
+    as_tsibble(index = Date, regular = TRUE)  
 close<-goog|>select(Close) # just get close
 sum(is.na(close)) # no na's
 min(close$Close) # min is positive
-#fitClose <- close |> model(TSLM(Close ~ trend() + season())) # complains
-# Warning message:
-# 1 error encountered for TSLM(Close ~ trend() + season())
-# [1] argument must be coercible to non-negative integer
-fitClose <- model(close,TSLM(Close ~ trend() + season())) # complains
-c<-close |> mutate(Close=as.integer(Close)) # convert to integer
-#autoplot(c)
-#close|>mutate(Close = Close / first(Close))
-fit <- c |> model(TSLM(Close ~ trend() + season())) # still complains
-report(fit)
+m<-model(close,TSLM(Close ~ trend() + season()))
+m[[1]]
+autoplot(close)
+models<-model(close,
+    #tslm=TSLM(Close ~ trend() + season()),              
+    #snaive=SNAIVE(Close), # complains about missing values, suggets: fill_gaps.
+    naive=NAIVE(Close), # could be just RW(). # complains about missing values, suggets: fill_gaps.
+    drift=RW(Close~drift()), # complains about missing values, suggets: fill_gaps.
+    mean=MEAN(Close)
+)
 
-# https://stackoverflow.com/questions/76449136/how-to-fix-tslm-warning-argument-must-be-coercible-to-non-negative-integer/76453110?noredirect=1#comment134821188_76453110
-gafa_stock |> 
-    filter(Symbol=="GOOG", year(Date)==2018) |> 
-    as_tsibble(index = Date, regular = TRUE) |> 
-    model(TSLM(Close ~ trend() + season())) |> 
-    report()

@@ -287,6 +287,7 @@ fc
 
 fc|>autoplot(eggs)+labs(title="annual egg prices",y="$US")
 
+# bias?
 prices |>
     filter(!is.na(eggs)) |>
     model(RW(log(eggs) ~ drift())) |>
@@ -296,6 +297,7 @@ prices |>
     ) +
     labs(title = "Annual egg prices",
          y = "$US (in cents adjusted for inflation) ")
+# the above plot does not have dotted line or legend.
 
 eggs<-prices |> filter(!is.na(eggs))
 fit<-eggs|>model(RW(log(eggs)~drift()))
@@ -348,7 +350,7 @@ dcmp <- us_retail_employment |>
     select(-.model)
 dcmp
 dcmp |>
-    model(NAIVE(season_adjust)) |>
+    model(NAIVE(season_adjust)) |> # different
     forecast() |>
     autoplot(dcmp) +
     labs(y = "Number of people",
@@ -374,6 +376,8 @@ fit_dcmp |> gg_tsresiduals()
 
 # beer graph with 4 forecastsk
 
+# sunlike residials, forcast errors on teh test set may involve multi-step forecasts.
+
 # text
 
 aus_production |> filter(year(Quarter) >= 1995)
@@ -381,6 +385,8 @@ aus_production |> filter(year(Quarter) >= 1995)
 aus_production |> filter_index("1995 Q1" ~ .)
 
 aus_production |>  slice(n()-19:0) # last 20 observations
+
+last20<-aus_production |>  slice(n()-19:0) # last 20 observations
 
 aus_retail |>  group_by(State, Industry) |>  slice(1:12)
 
@@ -420,10 +426,13 @@ beer_fc |> autoplot()
 names(beer_fc)
 # how to plot this?
 
-# Evaluating distributional forecast accuracy (as opposed to just a point)
+# 5.8 Evaluating distributional forecast accuracy (as opposed to just a point)
 
 # guy says stock prices are not seasonal!
 
+#video?
+
+google_2015 <- google_stock |> filter(year(Date) == 2015)
 google_fc |>
     filter(.model == "Naïve") |>
     autoplot(bind_rows(google_2015, google_jan_2016), level=80)+
@@ -469,6 +478,10 @@ google_fc |>
 #> 2 Mean   GOOG   Test  -1.90 
 #> 3 Naïve  GOOG   Test   0
 
+# text
+
+see 5.2 for google stock forecast
+
 # 5.9 Evaluating distributional forecast accuracy
 
 # quantile score
@@ -487,13 +500,19 @@ fb_stretch <- fb_stock |>
     filter(.id!=max(.id)) # remove the last one
 # my tsibble is 780k x 10!
 
+fb_stretch
+
 fit_cv<-fb_stretch|>model(RW(Close~drift()))
 
 fc_cv<-fit_cv|>forecast(h=1)
-
+# something is wroong here!
 fc_cv|>accuracy(fb_stock)
-
+# the above seems ok.
 fb_stock|>model(RW(Close~drift()))|>accuracy() # not using stretched?
+# the above seems ok.
+
+# end of video
+
 # in-sample - not fair!
 # he clains this is a good way to test a model?
 
@@ -503,7 +522,7 @@ google_2015_tr <- google_2015 |>
     stretch_tsibble(.init = 3, .step = 1) |>
     relocate(Date, Symbol, .id) # what does this do?
 google_2015_tr
-
+# .id is a new key that indicates which training set.
 # TSCV accuracy
 google_2015_tr |>
     model(RW(Close ~ drift())) |>
@@ -515,10 +534,11 @@ google_2015 |>
     model(RW(Close ~ drift())) |>
     accuracy()
 
-# example fc horizon acc with cv
+# example fc horizon accuracy with cross-validation
 
 google_2015_tr <- google_2015 |>
     stretch_tsibble(.init = 3, .step = 1)
+
 fc <- google_2015_tr |>
     model(RW(Close ~ drift())) |>
     forecast(h = 8) |>
