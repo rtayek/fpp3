@@ -205,6 +205,14 @@ aug |>
 
 gg_tsresiduals(fit,lag_max =200) # naive,  no augment
 
+# https://stackoverflow.com/questions/76932951/how-to-add-normal-plot-to-a-ggplot-of-residuals
+gg0 <- aug |>
+    ggplot(aes(x = .innov)) +
+    geom_histogram(aes(y=after_stat(density)))
+gg0 + geom_function(fun = dnorm, colour = "red", n = 1001,
+                    args = list(mean = mean(aug$.innov, na.rm = TRUE), 
+                                sd = sd(aug$.innov, na.rm = TRUE)))
+
 # portmaneau - box pierce?
 # ljung-box test l=10 more non seasonal otherwisre 2*period
 
